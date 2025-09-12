@@ -1,0 +1,25 @@
+server:
+  servlet:
+    contextPath: /api
+  port: 5004
+spring:
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        show_sql: true
+        temp:
+          use_jdbc_metadata_defaults: false
+    open-in-view: false
+  mvc:
+    view:
+      prefix: /WEB-INF/jsp/
+      suffix: .jsp
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 200MB
+welcome:
+  message: Hello
+common:
+  url: "http://localhost:5000/api"
