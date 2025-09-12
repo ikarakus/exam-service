@@ -1,6 +1,5 @@
 package com.ai.repository;
 
-import com.ai.entities.UserPackage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
