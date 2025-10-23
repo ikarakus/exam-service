@@ -13,8 +13,10 @@ public class ResultCodes {
 	public static final int INVALID_PARAMETER_EXCEPTION = 308;
 	public static final int NOT_FOUND_EXCEPTION = 309;
 	public static final int BAD_EXCEPTION = 400;
+	public static final int BAD_REQUEST = 400;
 	public static final int ERROR = 400;
 	public static final int UNEXPECTED_ERROR = 999;
 	public static final int INTERNAL_SERVER_ERROR = 500;
+	public static final int SERVICE_UNAVAILABLE = 503;
 
 }
