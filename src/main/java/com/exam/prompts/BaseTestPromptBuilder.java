@@ -6,9 +6,27 @@ import com.exam.dto.MessageDto;
 public abstract class BaseTestPromptBuilder {
     protected StringBuilder systemMessage = new StringBuilder();
     protected String tutor;
+    protected String topic;
+    protected boolean isChildFriendly;
+    protected String userNickname;
+    protected String ageRange;
+    protected boolean isFirstMessage;
 
     public BaseTestPromptBuilder(String model, String topic, String tutor) {
+        this(model, topic, tutor, false, null, null, false);
+    }
+    
+    public BaseTestPromptBuilder(String model, String topic, String tutor, boolean isChildFriendly, String userNickname, String ageRange) {
+        this(model, topic, tutor, isChildFriendly, userNickname, ageRange, false);
+    }
+    
+    public BaseTestPromptBuilder(String model, String topic, String tutor, boolean isChildFriendly, String userNickname, String ageRange, boolean isFirstMessage) {
         this.tutor = tutor;
+        this.topic = topic;
+        this.isChildFriendly = isChildFriendly;
+        this.userNickname = userNickname;
+        this.ageRange = ageRange;
+        this.isFirstMessage = isFirstMessage;
         // only change the topic if it is Ass
         if ("CEFR".equalsIgnoreCase(topic)) {
             topic = "General Language Assessment";
@@ -16,6 +34,10 @@ public abstract class BaseTestPromptBuilder {
         appendModelSpecificInstructions(model);
         appendTopicInstructions(topic);
         appendGeneralInstructions();
+        appendPersonalizationInstructions();
+        if (isFirstMessage) {
+            appendFirstMessageInstructions();
+        }
     }
 
     private void appendModelSpecificInstructions(String model) {
@@ -41,6 +63,30 @@ public abstract class BaseTestPromptBuilder {
         systemMessage.append("Your goal is to assess the user's language skills, provide questions, and evaluate answers. ");
         systemMessage.append("Focus on grammar, vocabulary, comprehension, and language proficiency. ");
         systemMessage.append("Keep instructions clear and concise. ");
+    }
+    
+    private void appendPersonalizationInstructions() {
+        // Add child-friendly instructions if applicable
+        if (isChildFriendly) {
+            systemMessage.append("You are assessing a child. Use simple, clear language and be extra encouraging and patient. ");
+            systemMessage.append("Make the assessment feel like a fun conversation rather than a formal test. ");
+        }
+        
+        // Add user nickname personalization
+        if (userNickname != null && !userNickname.trim().isEmpty()) {
+            systemMessage.append("The user's name is ").append(userNickname).append(". ");
+            systemMessage.append("You can use their name naturally in the assessment to make it more personal and friendly. ");
+        }
+        
+        // Add age-appropriate instructions
+        if (ageRange != null && !ageRange.trim().isEmpty()) {
+            systemMessage.append("The user is in the age range: ").append(ageRange).append(". ");
+            systemMessage.append("Adjust your assessment questions and language complexity to be appropriate for this age group. ");
+        }
+    }
+    
+    private void appendFirstMessageInstructions() {
+        systemMessage.append("This is the first message from the user. Since this is a first message, you should automatically generate an appropriate greeting and start the assessment conversation. Do not wait for the user to provide instructions - take the initiative to start the assessment based on the context. ");
     }
 
     public void appendPastDialogue(List<MessageDto> pastDialogue) {

@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.exam.service.OpenAiService;
+import com.exam.service.LlamaService;
 import com.exam.enums.SessionTestStatus;
 import com.exam.repository.AppConfigRepository;
 import java.util.Collections;
@@ -43,7 +43,7 @@ public class SessionServiceImpl implements SessionService {
     private SessionTestRepository sessionTestRepository;
 
     @Autowired
-    private OpenAiService openAiService;
+    private LlamaService llamaService;
 
     @Autowired
     private SessionTestQuestionRepository sessionTestQuestionRepository;
@@ -314,10 +314,10 @@ public class SessionServiceImpl implements SessionService {
             conversation.append(msg.getSenderNickname()).append(": ").append(msg.getMessage()).append("\n");
         }
         String prompt = "You are a language assessment expert. Given the following conversation, score the user's speaking ability on a scale of 0–100 and assign a CEFR level (A1, A2, B1, B2, C1, C2). If there is not enough data to score, say so. Only return a JSON object: {\"score\": <number>, \"level\": <CEFR>, \"insufficientData\": <true/false>}\nConversation:\n" + conversation;
-        System.out.println("[Assessment] OpenAI prompt for speaking score:\n" + prompt);
-        // Call OpenAI
-        String response = openAiService.getSpeakingScoreAssessment(prompt);
-        System.out.println("[Assessment] OpenAI raw response: " + response);
+        System.out.println("[Assessment] Llama prompt for speaking score:\n" + prompt);
+        // Call Llama
+        String response = llamaService.getSpeakingScoreAssessment(prompt);
+        System.out.println("[Assessment] Llama raw response: " + response);
         if (response == null) return null;
         // Clean up response: remove any text before first { and after last }
         int startIdx = response.indexOf("{");

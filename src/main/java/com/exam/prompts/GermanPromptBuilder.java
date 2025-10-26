@@ -5,6 +5,14 @@ public class GermanPromptBuilder extends BasePromptBuilder {
     public GermanPromptBuilder(String model, String topic, String tutor) {
         super(model, topic, tutor);
     }
+    
+    public GermanPromptBuilder(String model, String topic, String tutor, boolean isChildFriendly, String userNickname, String ageRange) {
+        super(model, topic, tutor, isChildFriendly, userNickname, ageRange, false);
+    }
+    
+    public GermanPromptBuilder(String model, String topic, String tutor, boolean isChildFriendly, String userNickname, String ageRange, boolean isFirstMessage) {
+        super(model, topic, tutor, isChildFriendly, userNickname, ageRange, isFirstMessage);
+    }
 
     @Override
     protected void appendLanguageSpecificInstructions(String language, String languageLevel) {

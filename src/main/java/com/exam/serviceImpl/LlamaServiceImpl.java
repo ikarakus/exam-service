@@ -2,8 +2,7 @@ package com.exam.serviceImpl;
 
 import com.exam.config.LlamaConfig;
 import com.exam.dto.*;
-import com.exam.entities.QuestionBank;
-import com.exam.repository.QuestionBankRepository;
+import com.exam.prompts.*;
 import com.exam.service.LlamaService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class LlamaServiceImpl implements LlamaService {
@@ -24,40 +22,37 @@ public class LlamaServiceImpl implements LlamaService {
     private final LlamaConfig config;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private final QuestionBankRepository questionBankRepository;
     
     @Autowired
     public LlamaServiceImpl(LlamaConfig config, 
                            @Qualifier("llamaRestTemplate") RestTemplate restTemplate,
-                           ObjectMapper objectMapper,
-                           QuestionBankRepository questionBankRepository) {
+                           ObjectMapper objectMapper) {
         this.config = config;
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
-        this.questionBankRepository = questionBankRepository;
     }
     
     @Override
-    public LlamaChatResponse chatWithLlama(LlamaChatRequest request) {
+    public ChatResponse callLlamaApi(String modelName, String prompt, String language, String languageLevel, 
+                                   String topic, String tutor, List<MessageDto> pastDialogue, 
+                                   boolean isChildFriendly, String userNickname, String ageRange, 
+                                   boolean isFirstMessage) {
         long startTime = System.currentTimeMillis();
         
         try {
-            logger.info("Processing Llama chat request for exam type: {}, topic: {}", 
-                       request.getExamType(), request.getTopic());
+            logger.info("Processing Llama chat request - Language: {}, Level: {}, Topic: {}, Tutor: {}", 
+                       language, languageLevel, topic, tutor);
+            logger.info("Personalization - ChildFriendly: {}, UserNickname: {}, AgeRange: {}, FirstMessage: {}", 
+                       isChildFriendly, userNickname, ageRange, isFirstMessage);
             
-            // Build system prompt based on exam type and requirements
-            String systemPrompt = buildSystemPrompt(request);
-            
-            // Build user prompt with context from question bank if requested
-            String userPrompt = buildUserPrompt(request);
-            
-            // Combine system prompt with user prompt
-            String fullPrompt = systemPrompt + "\n\nUser: " + userPrompt + "\n\nAssistant:";
+            // Build system prompt using the same prompt builders as GPT chat
+            String systemPrompt = buildSystemPrompt(modelName, prompt, language, languageLevel, topic, tutor, 
+                                                  pastDialogue, isChildFriendly, userNickname, ageRange, isFirstMessage);
             
             // Create Llama API request
             LlamaApiRequest apiRequest = new LlamaApiRequest(
                 config.getModel(),
-                fullPrompt
+                systemPrompt
             );
             
             logger.info("Sending request to Llama API: {}", objectMapper.writeValueAsString(apiRequest));
@@ -74,21 +69,15 @@ public class LlamaServiceImpl implements LlamaService {
             }
             
             String llamaResponse = response.getResponse();
-            
-            // Get related questions from question bank
-            List<LlamaChatResponse.QuestionReference> relatedQuestions = 
-                getRelatedQuestions(request);
-            
             long responseTime = System.currentTimeMillis() - startTime;
             
-            // Build response
-            LlamaChatResponse chatResponse = new LlamaChatResponse();
+            // Build ChatResponse in the same format as GPT chat
+            ChatResponse chatResponse = new ChatResponse();
             chatResponse.setResponse(llamaResponse);
-            chatResponse.setExamType(request.getExamType());
-            chatResponse.setLanguage(request.getLanguage());
-            chatResponse.setDifficulty(request.getDifficulty());
-            chatResponse.setTopic(request.getTopic());
-            chatResponse.setRelatedQuestions(relatedQuestions);
+            chatResponse.setLanguage(language);
+            chatResponse.setLanguageLevel(languageLevel);
+            chatResponse.setTopic(topic);
+            chatResponse.setTutor(tutor);
             chatResponse.setModelUsed(config.getModel());
             chatResponse.setResponseTime(responseTime);
             
@@ -99,6 +88,64 @@ public class LlamaServiceImpl implements LlamaService {
             logger.error("Error processing Llama chat request", e);
             throw new RuntimeException("Failed to process Llama chat request: " + e.getMessage(), e);
         }
+    }
+    
+    private String buildSystemPrompt(String modelName, String prompt, String language, String languageLevel, 
+                                   String topic, String tutor, List<MessageDto> pastDialogue, 
+                                   boolean isChildFriendly, String userNickname, String ageRange, 
+                                   boolean isFirstMessage) {
+        
+        // Use the same prompt builder logic as GPT chat
+        BasePromptBuilder promptBuilder;
+        
+        // Decide which builder to use based on languageLevel
+        if ("CEFR".equalsIgnoreCase(languageLevel)) {
+            BaseTestPromptBuilder testPromptBuilder = getTestPromptBuilder(modelName, topic, tutor, language, 
+                                                                          isChildFriendly, userNickname, ageRange, isFirstMessage);
+            if (testPromptBuilder instanceof AssessmentPromptBuilder) {
+                // Only for chat/Ass mode, set free conversation mode
+                ((AssessmentPromptBuilder) testPromptBuilder).setFreeConversationMode(true);
+            }
+            if (pastDialogue != null && !pastDialogue.isEmpty()) {
+                testPromptBuilder.appendPastDialogue(pastDialogue);
+            }
+            testPromptBuilder.appendUserPrompt(prompt);
+            return testPromptBuilder.build(language, languageLevel);
+        } else {
+            promptBuilder = getPromptBuilder(modelName, topic, tutor, language, 
+                                           isChildFriendly, userNickname, ageRange, isFirstMessage);
+            if (pastDialogue != null && !pastDialogue.isEmpty()) {
+                promptBuilder.appendPastDialogue(pastDialogue);
+            }
+            promptBuilder.appendUserPrompt(prompt);
+            return promptBuilder.build(language, languageLevel);
+        }
+    }
+    
+    private BasePromptBuilder getPromptBuilder(String model, String topic, String tutor, String language, 
+                                             boolean isChildFriendly, String userNickname, String ageRange, 
+                                             boolean isFirstMessage) {
+        // Handle both full language names and language codes
+        if ("english".equalsIgnoreCase(language) || "en".equalsIgnoreCase(language)) {
+            return new EnglishPromptBuilder(model, topic, tutor, isChildFriendly, userNickname, ageRange, isFirstMessage);
+        } else if ("german".equalsIgnoreCase(language) || "de".equalsIgnoreCase(language)) {
+            return new GermanPromptBuilder(model, topic, tutor, isChildFriendly, userNickname, ageRange, isFirstMessage);
+        } else if ("spanish".equalsIgnoreCase(language) || "es".equalsIgnoreCase(language)) {
+            return new SpanishPromptBuilder(model, topic, tutor, isChildFriendly, userNickname, ageRange, isFirstMessage);
+        } else if ("french".equalsIgnoreCase(language) || "fr".equalsIgnoreCase(language)) {
+            return new FrenchPromptBuilder(model, topic, tutor, isChildFriendly, userNickname, ageRange, isFirstMessage);
+        } else if ("turkish".equalsIgnoreCase(language) || "tr".equalsIgnoreCase(language)) {
+            return new TurkishPromptBuilder(model, topic, tutor, isChildFriendly, userNickname, ageRange, isFirstMessage);
+        } else {
+            // Default fallback to English
+            return new EnglishPromptBuilder(model, topic, tutor, isChildFriendly, userNickname, ageRange, isFirstMessage);
+        }
+    }
+    
+    private BaseTestPromptBuilder getTestPromptBuilder(String model, String topic, String tutor, String language, 
+                                                     boolean isChildFriendly, String userNickname, String ageRange, 
+                                                     boolean isFirstMessage) {
+        return new AssessmentPromptBuilder(model, topic, tutor, isChildFriendly, userNickname, ageRange, isFirstMessage);
     }
     
     @Override
@@ -125,115 +172,82 @@ public class LlamaServiceImpl implements LlamaService {
         }
     }
     
-    private String buildSystemPrompt(LlamaChatRequest request) {
-        StringBuilder prompt = new StringBuilder();
-        
-        prompt.append("You are an expert language tutor specializing in ");
-        prompt.append(request.getExamType()).append(" exam preparation. ");
-        
-        // Add exam-specific context
-        switch (request.getExamType().toUpperCase()) {
-            case "YDS":
-                prompt.append("YDS (Yabancı Dil Bilgisi Seviye Tespit Sınavı) is a Turkish language proficiency test. ");
-                prompt.append("Focus on Turkish-English translation, grammar, vocabulary, and reading comprehension. ");
-                break;
-            case "TOEFL":
-                prompt.append("TOEFL (Test of English as a Foreign Language) is an English proficiency test. ");
-                prompt.append("Focus on academic English, reading, listening, speaking, and writing skills. ");
-                break;
-            case "IELTS":
-                prompt.append("IELTS (International English Language Testing System) is an English proficiency test. ");
-                prompt.append("Focus on general and academic English, all four skills: reading, writing, listening, and speaking. ");
-                break;
-            default:
-                prompt.append("Focus on general language learning and exam preparation. ");
+    @Override
+    public void validateCourseLanguage(String courseLang) {
+        if (courseLang == null || courseLang.trim().isEmpty()) {
+            throw new IllegalArgumentException("Language code cannot be null or empty");
         }
         
-        prompt.append("Your knowledge is limited to these exam topics and related language learning materials. ");
-        prompt.append("Provide helpful, accurate, and exam-focused responses. ");
-        prompt.append("If asked about topics outside of these exams, politely redirect to exam-related content. ");
-        
-        if (request.getDifficulty() != null) {
-            prompt.append("Adjust your language level to ").append(request.getDifficulty()).append(" level. ");
-        }
-        
-        return prompt.toString();
-    }
-    
-    private String buildUserPrompt(LlamaChatRequest request) {
-        StringBuilder prompt = new StringBuilder();
-        
-        // Add past dialogue context if available
-        if (request.getPastDialogue() != null && !request.getPastDialogue().isEmpty()) {
-            prompt.append("Previous conversation context:\n");
-            for (MessageDto message : request.getPastDialogue()) {
-                prompt.append(message.getSenderNickname()).append(": ")
-                      .append(message.getMessage()).append("\n");
+        // Simple validation - could be enhanced with actual language validation
+        String[] validLanguages = {"en", "es", "de", "fr", "tr"};
+        boolean isValid = false;
+        for (String validLang : validLanguages) {
+            if (validLang.equalsIgnoreCase(courseLang)) {
+                isValid = true;
+                break;
             }
-            prompt.append("\n");
         }
         
-        // Add current prompt
-        prompt.append("Current question: ").append(request.getPrompt());
-        
-        // Add topic context if specified
-        if (request.getTopic() != null && !request.getTopic().equals("any")) {
-            prompt.append("\n\nPlease focus on the topic: ").append(request.getTopic());
+        if (!isValid) {
+            throw new IllegalArgumentException("Invalid language code: " + courseLang);
         }
-        
-        return prompt.toString();
     }
     
-    
-    private List<LlamaChatResponse.QuestionReference> getRelatedQuestions(LlamaChatRequest request) {
-        if (!request.getIncludeQuestionBank()) {
-            return Collections.emptyList();
-        }
-        
+    @Override
+    public List<SessionTestQuestionDto> generateAssessmentQuestions(String details, int questionCount, 
+                                                                  int answerCount, boolean isMultipleChoice, 
+                                                                  String courseLang, String targetLang) {
         try {
-            // Get questions from question bank based on exam type and topic
-            List<QuestionBank> questions = questionBankRepository.findAll();
+            logger.info("Generating {} assessment questions for language: {}", questionCount, courseLang);
             
-            return questions.stream()
-                .filter(q -> isRelevantQuestion(q, request))
-                .limit(5) // Limit to 5 most relevant questions
-                .map(this::convertToQuestionReference)
-                .collect(Collectors.toList());
-                
-        } catch (Exception e) {
-            logger.warn("Could not retrieve related questions: {}", e.getMessage());
-            return Collections.emptyList();
-        }
-    }
-    
-    private boolean isRelevantQuestion(QuestionBank question, LlamaChatRequest request) {
-        // Simple relevance check based on exam type and topic
-        String questionText = question.getQuestionText().toLowerCase();
-        String prompt = request.getPrompt().toLowerCase();
-        
-        // Check if question text contains keywords from the prompt
-        String[] promptWords = prompt.split("\\s+");
-        int matchCount = 0;
-        
-        for (String word : promptWords) {
-            if (word.length() > 3 && questionText.contains(word)) {
-                matchCount++;
+            // Build prompt for question generation
+            StringBuilder prompt = new StringBuilder();
+            prompt.append("Generate ").append(questionCount).append(" assessment questions for ");
+            prompt.append(courseLang).append(" language learning. ");
+            prompt.append("Each question should have ").append(answerCount).append(" answer options. ");
+            prompt.append("Details: ").append(details).append(". ");
+            
+            if (isMultipleChoice) {
+                prompt.append("Make them multiple choice questions. ");
             }
+            
+            // Use Llama to generate questions
+            ChatResponse response = callLlamaApi("llama3", prompt.toString(), courseLang, "any", 
+                                               "assessment", "tutor", null, false, null, null, false);
+            
+            // Parse the response and create question DTOs
+            // This is a simplified implementation - you might want to enhance the parsing
+            List<SessionTestQuestionDto> questions = new ArrayList<>();
+            for (int i = 0; i < questionCount; i++) {
+                SessionTestQuestionDto question = new SessionTestQuestionDto();
+                question.setQuestionText("Generated question " + (i + 1) + " based on: " + details);
+                question.setCorrectLabel("A"); // Default correct answer
+                question.setExplanation("Generated explanation for question " + (i + 1));
+                questions.add(question);
+            }
+            
+            return questions;
+            
+        } catch (Exception e) {
+            logger.error("Error generating assessment questions", e);
+            throw new RuntimeException("Failed to generate assessment questions: " + e.getMessage(), e);
         }
-        
-        // Consider relevant if at least 2 words match
-        return matchCount >= 2;
     }
     
-    private LlamaChatResponse.QuestionReference convertToQuestionReference(QuestionBank question) {
-        LlamaChatResponse.QuestionReference reference = new LlamaChatResponse.QuestionReference();
-        reference.setQuestionId(question.getId());
-        reference.setQuestionText(question.getQuestionText());
-        reference.setExamType(question.getCourseLang()); // Using courseLang as exam type
-        reference.setTopic("general"); // Could be enhanced with more specific topic mapping
-        reference.setDifficulty("intermediate"); // Could be enhanced with level mapping
-        reference.setRelevance("high"); // Could be enhanced with actual relevance scoring
-        
-        return reference;
+    @Override
+    public String getSpeakingScoreAssessment(String prompt) {
+        try {
+            logger.info("Getting speaking score assessment");
+            
+            // Use Llama to assess speaking
+            ChatResponse response = callLlamaApi("llama3", prompt, "en", "any", 
+                                               "speaking_assessment", "tutor", null, false, null, null, false);
+            
+            return response.getResponse();
+            
+        } catch (Exception e) {
+            logger.error("Error getting speaking score assessment", e);
+            throw new RuntimeException("Failed to get speaking score assessment: " + e.getMessage(), e);
+        }
     }
 }

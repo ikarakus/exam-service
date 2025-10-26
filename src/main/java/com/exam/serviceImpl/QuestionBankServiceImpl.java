@@ -11,7 +11,7 @@ import com.exam.repository.AppConfigRepository;
 import com.exam.repository.LessonLevelRepository;
 import com.exam.repository.LessonRepository;
 import com.exam.repository.QuestionBankRepository;
-import com.exam.service.OpenAiService;
+import com.exam.service.LlamaService;
 import com.exam.service.QuestionBankService;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
     private LessonRepository lessonRepository;
 
     @Autowired
-    private OpenAiService openAiService;
+    private LlamaService llamaService;
 
     @Autowired
     private AppConfigRepository appConfigRepository;
@@ -58,8 +58,8 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             throw new IllegalArgumentException("Language code cannot be null or empty");
         }
         
-        // Use the OpenAiService validation method
-        openAiService.validateCourseLanguage(courseLang);
+        // Use the LlamaService validation method
+        llamaService.validateCourseLanguage(courseLang);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         logger.info("Calling OpenAI service for level: {} and topic: {}", request.getLevel(), request.getTopic());
         
         // Generate questions using the same logic as create-exam
-        List<SessionTestQuestionDto> questionDtos = openAiService.generateAssessmentQuestions(
+        List<SessionTestQuestionDto> questionDtos = llamaService.generateAssessmentQuestions(
                 details, questionCount, answerCount, false, request.getCourseLang(), request.getCourseLang());
 
         if (questionDtos == null || questionDtos.isEmpty()) {
@@ -191,7 +191,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         logger.info("Calling OpenAI service for lesson: {}", lesson.getName());
         
         // Generate questions using the same logic as create-exam
-        List<SessionTestQuestionDto> questionDtos = openAiService.generateAssessmentQuestions(
+        List<SessionTestQuestionDto> questionDtos = llamaService.generateAssessmentQuestions(
                 details, questionCount, answerCount, false, courseLang, courseLang);
 
         if (questionDtos == null || questionDtos.isEmpty()) {
@@ -337,8 +337,8 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             
             logger.info("Generating {} assessment questions for courseLang: {}", questionCount, courseLang);
             
-            // Generate questions using OpenAI
-            List<SessionTestQuestionDto> questionDtos = openAiService.generateAssessmentQuestions(
+            // Generate questions using Llama
+            List<SessionTestQuestionDto> questionDtos = llamaService.generateAssessmentQuestions(
                     details, questionCount, 5, true, courseLang, courseLang);
             
             if (questionDtos == null || questionDtos.isEmpty()) {

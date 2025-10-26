@@ -3,7 +3,7 @@ package com.exam.serviceImpl;
 import com.exam.dto.*;
 import com.exam.entities.QuestionBank;
 import com.exam.repository.QuestionBankRepository;
-import com.exam.service.OpenAiService;
+import com.exam.service.LlamaService;
 import com.exam.service.PdfProcessingService;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -33,7 +33,7 @@ public class PdfProcessingServiceImpl implements PdfProcessingService {
     private static final Logger logger = LoggerFactory.getLogger(PdfProcessingServiceImpl.class);
     
     @Autowired
-    private OpenAiService openAiService;
+    private LlamaService llamaService;
     
     @Autowired
     private QuestionBankRepository questionBankRepository;
@@ -276,15 +276,19 @@ public class PdfProcessingServiceImpl implements PdfProcessingService {
     
     private String callOpenAiForQuestionExtraction(String prompt, PdfAnalysisRequestDto request) {
         try {
-            // Use the existing OpenAI service
-            ChatResponse response = openAiService.callOpenAiApi(
-                "gpt-4o", 
+            // Use the existing Llama service
+            ChatResponse response = llamaService.callLlamaApi(
+                "llama3", 
                 prompt, 
                 request.getCourseLang(), 
                 "any", 
                 request.getTopic() != null ? request.getTopic() : "question extraction", 
                 "", 
-                null
+                null,
+                false,
+                null,
+                null,
+                false
             );
             
             if (response != null && response.getChoices() != null && !response.getChoices().isEmpty()) {

@@ -9,12 +9,34 @@ public abstract class BasePromptBuilder {
 
     protected StringBuilder systemMessage = new StringBuilder();
     protected String tutor;
+    protected String topic;
+    protected boolean isChildFriendly;
+    protected String userNickname;
+    protected String ageRange;
+    protected boolean isFirstMessage;
 
     public BasePromptBuilder(String model, String topic, String tutor) {
+        this(model, topic, tutor, false, null, null, false);
+    }
+    
+    public BasePromptBuilder(String model, String topic, String tutor, boolean isChildFriendly, String userNickname, String ageRange) {
+        this(model, topic, tutor, isChildFriendly, userNickname, ageRange, false);
+    }
+    
+    public BasePromptBuilder(String model, String topic, String tutor, boolean isChildFriendly, String userNickname, String ageRange, boolean isFirstMessage) {
         this.tutor = tutor;
+        this.topic = topic;
+        this.isChildFriendly = isChildFriendly;
+        this.userNickname = userNickname;
+        this.ageRange = ageRange;
+        this.isFirstMessage = isFirstMessage;
         appendModelSpecificInstructions(model);
         appendTopicInstructions(topic);
         appendGeneralInstructions();
+        appendPersonalizationInstructions();
+        if (isFirstMessage) {
+            appendFirstMessageInstructions();
+        }
     }
 
     private void appendModelSpecificInstructions(String model) {
@@ -89,6 +111,30 @@ public abstract class BasePromptBuilder {
                 // Exit handling
                 .append("If the user explicitly says they want to exit (e.g., 'I want to leave', 'end this', 'exit', etc.), respond only with: ")
                 .append("'If you want to exit, please click the exit button.' Do not ask follow-up questions in this case. ");
+    }
+
+    private void appendPersonalizationInstructions() {
+        // Add child-friendly instructions if applicable
+        if (isChildFriendly) {
+            systemMessage.append("You are speaking with a child. Use simple, clear language and be extra encouraging and patient. ");
+            systemMessage.append("Avoid complex topics and keep explanations age-appropriate. ");
+        }
+        
+        // Add user nickname personalization
+        if (userNickname != null && !userNickname.trim().isEmpty()) {
+            systemMessage.append("The user's name is ").append(userNickname).append(". ");
+            systemMessage.append("You can use their name naturally in conversation to make it more personal and friendly. ");
+        }
+        
+        // Add age-appropriate instructions
+        if (ageRange != null && !ageRange.trim().isEmpty()) {
+            systemMessage.append("The user is in the age range: ").append(ageRange).append(". ");
+            systemMessage.append("Adjust your language complexity and topic choices to be appropriate for this age group. ");
+        }
+    }
+
+    private void appendFirstMessageInstructions() {
+        systemMessage.append("This is the first message from the user. Since this is a first message, you should automatically generate an appropriate greeting and start the conversation. Do not wait for the user to provide instructions - take the initiative to start the conversation based on the context. ");
     }
 
     protected abstract void appendLanguageSpecificInstructions(String language, String languageLevel);

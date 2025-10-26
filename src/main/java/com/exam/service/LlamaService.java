@@ -1,16 +1,31 @@
 package com.exam.service;
 
-import com.exam.dto.LlamaChatRequest;
-import com.exam.dto.LlamaChatResponse;
+import com.exam.dto.ChatResponse;
+import com.exam.dto.MessageDto;
+
+import java.util.List;
 
 public interface LlamaService {
     
     /**
-     * Chat with Llama 3 for exam-related topics (YDS, TOEFL, IELTS)
-     * @param request The chat request containing prompt, exam type, and other parameters
-     * @return Llama chat response with exam-specific information
+     * Chat with Llama 3 using the same interface as GPT chat
+     * @param modelName Model name (for compatibility, but uses llama3)
+     * @param prompt User's prompt
+     * @param language Target language
+     * @param languageLevel User's proficiency level
+     * @param topic Conversation topic
+     * @param tutor Tutor name
+     * @param pastDialogue Previous conversation history
+     * @param isChildFriendly Whether content should be child-friendly
+     * @param userNickname User's nickname for personalization
+     * @param ageRange User's age range
+     * @param isFirstMessage Whether this is the first message
+     * @return Chat response in the same format as GPT chat
      */
-    LlamaChatResponse chatWithLlama(LlamaChatRequest request);
+    ChatResponse callLlamaApi(String modelName, String prompt, String language, String languageLevel, 
+                             String topic, String tutor, List<MessageDto> pastDialogue, 
+                             boolean isChildFriendly, String userNickname, String ageRange, 
+                             boolean isFirstMessage);
     
     /**
      * Check if Llama service is available
@@ -23,5 +38,32 @@ public interface LlamaService {
      * @return List of available model names
      */
     java.util.List<String> getAvailableModels();
+    
+    /**
+     * Validate course language
+     * @param courseLang Language code to validate
+     */
+    void validateCourseLanguage(String courseLang);
+    
+    /**
+     * Generate assessment questions
+     * @param details Question details
+     * @param questionCount Number of questions to generate
+     * @param answerCount Number of answer options
+     * @param isMultipleChoice Whether questions are multiple choice
+     * @param courseLang Course language
+     * @param targetLang Target language
+     * @return List of generated questions
+     */
+    java.util.List<com.exam.dto.SessionTestQuestionDto> generateAssessmentQuestions(
+        String details, int questionCount, int answerCount, boolean isMultipleChoice, 
+        String courseLang, String targetLang);
+    
+    /**
+     * Get speaking score assessment
+     * @param prompt Assessment prompt
+     * @return Assessment response
+     */
+    String getSpeakingScoreAssessment(String prompt);
 }
 

@@ -5,6 +5,14 @@ public class FrenchPromptBuilder extends BasePromptBuilder {
     public FrenchPromptBuilder(String model, String topic, String tutor) {
         super(model, topic, tutor);
     }
+    
+    public FrenchPromptBuilder(String model, String topic, String tutor, boolean isChildFriendly, String userNickname, String ageRange) {
+        super(model, topic, tutor, isChildFriendly, userNickname, ageRange, false);
+    }
+    
+    public FrenchPromptBuilder(String model, String topic, String tutor, boolean isChildFriendly, String userNickname, String ageRange, boolean isFirstMessage) {
+        super(model, topic, tutor, isChildFriendly, userNickname, ageRange, isFirstMessage);
+    }
 
     @Override
     protected void appendLanguageSpecificInstructions(String language, String languageLevel) {

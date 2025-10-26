@@ -1,15 +1,24 @@
 package com.exam.controller;
 
 import com.exam.dto.*;
-import com.exam.service.LlamaService;
+import com.exam.entities.*;
+import com.exam.repository.*;
+import com.exam.service.*;
 import com.exam.util.Helper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/llama")
@@ -17,155 +26,176 @@ public class LlamaController {
     
     @Autowired
     private LlamaService llamaService;
-    
+
+    @Autowired
+    AvatarService avatarService;
+
+    @Autowired
+    UserService userService;
+
+    @Autowired
+    AvatarProfileRepository avatarProfileRepository;
+
+    @Autowired
+    UserProfileRepository userProfileRepository;
+
     /**
      * Chat endpoint for exam-related topics using Llama 3
-     * Similar to GPT chat but specialized for YDS, TOEFL, and IELTS
+     * Handles the same request/response format as the previous GPT chat
      */
     @PostMapping("/chat")
-    public ResponseEntity<ResponseDto> chat(@RequestBody LlamaChatRequest request) {
+    public ResponseEntity<ResponseDto> chat(@RequestBody Chat chat) {
         ResponseDto responseDto = new ResponseDto<>();
         
-        try {
-            // Validate request
-            if (request.getPrompt() == null || request.getPrompt().trim().isEmpty()) {
-                Helper.fillResponse(responseDto, ResultCodes.BAD_REQUEST, "Prompt cannot be empty");
-                return new ResponseEntity<>(responseDto, HttpStatus.BAD_REQUEST);
+        // Handle database lookups for personalization
+        String tutorName = chat.getTutor();
+        String userNickname = null;
+        String ageRange = null;
+        boolean isChildFriendly = false;
+        
+        // Lookup tutor information if tutorId is provided
+        if (chat.getTutorId() != null) {
+            try {
+                Optional<AvatarProfile> avatarProfile = avatarProfileRepository.findByTutorId(chat.getTutorId());
+                if (avatarProfile.isPresent()) {
+                    tutorName = avatarProfile.get().getFullName();
+                    isChildFriendly = avatarProfile.get().isKids();
+                }
+            } catch (Exception e) {
+                // Log error but continue with original tutor name
+                System.err.println("Error looking up tutor: " + e.getMessage());
             }
-            
-            if (request.getExamType() == null || request.getExamType().trim().isEmpty()) {
-                Helper.fillResponse(responseDto, ResultCodes.BAD_REQUEST, "Exam type must be specified (YDS, TOEFL, or IELTS)");
-                return new ResponseEntity<>(responseDto, HttpStatus.BAD_REQUEST);
-            }
-            
-            // Validate exam type
-            String examType = request.getExamType().toUpperCase();
-            if (!examType.equals("YDS") && !examType.equals("TOEFL") && !examType.equals("IELTS")) {
-                Helper.fillResponse(responseDto, ResultCodes.BAD_REQUEST, "Exam type must be YDS, TOEFL, or IELTS");
-                return new ResponseEntity<>(responseDto, HttpStatus.BAD_REQUEST);
-            }
-            
-            // Set default values if not provided
-            if (request.getLanguage() == null) {
-                request.setLanguage("en");
-            }
-            if (request.getDifficulty() == null) {
-                request.setDifficulty("intermediate");
-            }
-            if (request.getIncludeQuestionBank() == null) {
-                request.setIncludeQuestionBank(true);
-            }
-            
-            // Call Llama service
-            LlamaChatResponse chatResponse = llamaService.chatWithLlama(request);
-            
-            responseDto.setResponseBody(Collections.singletonList(chatResponse));
-            Helper.fillResponse(responseDto, ResultCodes.OK, null);
-            
-            return new ResponseEntity<>(responseDto, HttpStatus.OK);
-            
-        } catch (Exception e) {
-            Helper.fillResponse(responseDto, ResultCodes.INTERNAL_SERVER_ERROR, 
-                               "Error processing chat request: " + e.getMessage());
-            return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        
+        // Lookup user information if userId is provided
+        if (chat.getUserId() != null) {
+            try {
+                Optional<User> user = userService.getUser(chat.getUserId());
+                if (user.isPresent()) {
+                    Optional<UserProfile> userProfile = userProfileRepository.findByUser(user.get());
+                    if (userProfile.isPresent()) {
+                        userNickname = userProfile.get().getNickName();
+                        ageRange = getAgeRange(userProfile.get().getAgeGroup());
+                    }
+                }
+            } catch (Exception e) {
+                // Log error but continue without user personalization
+                System.err.println("Error looking up user: " + e.getMessage());
+            }
+        }
+        
+        ChatResponse chatResponse = llamaService.callLlamaApi(
+            chat.getModel(), 
+            chat.getPrompt(), 
+            chat.getLanguage(), 
+            chat.getLanguageLevel(), 
+            chat.getTopic(), 
+            tutorName, 
+            chat.getPastDialogue(),
+            isChildFriendly,
+            userNickname,
+            ageRange,
+            chat.getFirstMessage() != null ? chat.getFirstMessage() : false
+        );
+        
+        responseDto.setResponseBody(Collections.singletonList(chatResponse));
+        Helper.fillResponse(responseDto, ResultCodes.OK, null);
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
     
+    private String getAgeRange(Integer ageGroup) {
+        if (ageGroup == null) return null;
+        
+        switch (ageGroup) {
+            case 1: return "5-12 years";
+            case 2: return "13-17 years";
+            case 3: return "18-25 years";
+            case 4: return "26-35 years";
+            case 5: return "36-50 years";
+            case 6: return "51+ years";
+            default: return null;
+        }
+    }
+
+    @GetMapping("/tutors/{lang}/{kids}")
+    public ResponseEntity<ResponseDto> getTutors(@PathVariable String lang, @PathVariable String kids) {
+        ResponseDto responseDto = new ResponseDto<>();
+        List<AvatarProfileDto> avatarProfileDtoList = avatarService.getTutors(lang,Boolean.parseBoolean(kids));
+        responseDto.setResponseBody(avatarProfileDtoList);
+        Helper.fillResponse(responseDto, ResultCodes.OK, null);
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
+    }
+
     /**
-     * Check if Llama service is available
+     * Check if Ollama is running and start it if not
+     * This endpoint can be used on server to ensure Ollama is running
      */
-    @GetMapping("/health")
-    public ResponseEntity<ResponseDto> healthCheck() {
-        ResponseDto responseDto = new ResponseDto<>();
+    @GetMapping("/ollama/status")
+    public ResponseEntity<Map<String, Object>> checkOllamaStatus() {
+        Map<String, Object> response = new HashMap<>();
         
         try {
-            boolean isAvailable = llamaService.isServiceAvailable();
-            String message = isAvailable ? "Llama service is available" : "Llama service is not available";
+            // Check if Ollama is running
+            boolean isRunning = isOllamaRunning();
+            response.put("running", isRunning);
+            response.put("message", isRunning ? "Ollama is running" : "Ollama is not running");
             
-            responseDto.setResponseBody(Collections.singletonList(message));
-            Helper.fillResponse(responseDto, isAvailable ? ResultCodes.OK : ResultCodes.SERVICE_UNAVAILABLE, null);
+            if (!isRunning) {
+                // Try to start Ollama
+                boolean started = startOllama();
+                response.put("started", started);
+                response.put("message", started ? "Ollama started successfully" : "Failed to start Ollama");
+            }
             
-            return new ResponseEntity<>(responseDto, isAvailable ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE);
+            return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            Helper.fillResponse(responseDto, ResultCodes.INTERNAL_SERVER_ERROR, 
-                               "Error checking service health: " + e.getMessage());
-            return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
+            response.put("running", false);
+            response.put("started", false);
+            response.put("error", e.getMessage());
+            response.put("message", "Error checking Ollama status");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
-     * Get available models
+     * Check if Ollama service is running
      */
-    @GetMapping("/models")
-    public ResponseEntity<ResponseDto> getAvailableModels() {
-        ResponseDto responseDto = new ResponseDto<>();
-        
+    private boolean isOllamaRunning() {
         try {
-            List<String> models = llamaService.getAvailableModels();
-            responseDto.setResponseBody(models);
-            Helper.fillResponse(responseDto, ResultCodes.OK, null);
+            URL url = new URL("http://localhost:11434/api/tags");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(2000);
+            connection.setReadTimeout(2000);
             
-            return new ResponseEntity<>(responseDto, HttpStatus.OK);
+            int responseCode = connection.getResponseCode();
+            return responseCode == 200;
             
         } catch (Exception e) {
-            Helper.fillResponse(responseDto, ResultCodes.INTERNAL_SERVER_ERROR, 
-                               "Error retrieving models: " + e.getMessage());
-            return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
+            return false;
         }
     }
-    
+
     /**
-     * Get exam-specific help and information
+     * Start Ollama service
      */
-    @GetMapping("/help/{examType}")
-    public ResponseEntity<ResponseDto> getExamHelp(@PathVariable String examType) {
-        ResponseDto responseDto = new ResponseDto<>();
-        
+    private boolean startOllama() {
         try {
-            String examTypeUpper = examType.toUpperCase();
-            String helpText = getExamHelpText(examTypeUpper);
+            // Start Ollama in background
+            ProcessBuilder processBuilder = new ProcessBuilder("ollama", "serve");
+            processBuilder.redirectErrorStream(true);
+            Process process = processBuilder.start();
             
-            responseDto.setResponseBody(Collections.singletonList(helpText));
-            Helper.fillResponse(responseDto, ResultCodes.OK, null);
+            // Wait a bit for Ollama to start
+            Thread.sleep(3000);
             
-            return new ResponseEntity<>(responseDto, HttpStatus.OK);
+            // Check if it's running now
+            return isOllamaRunning();
             
         } catch (Exception e) {
-            Helper.fillResponse(responseDto, ResultCodes.INTERNAL_SERVER_ERROR, 
-                               "Error retrieving help: " + e.getMessage());
-            return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    private String getExamHelpText(String examType) {
-        switch (examType) {
-            case "YDS":
-                return "YDS (Yabancı Dil Bilgisi Seviye Tespit Sınavı) Help:\n" +
-                       "- Focus on Turkish-English translation\n" +
-                       "- Grammar and vocabulary questions\n" +
-                       "- Reading comprehension\n" +
-                       "- Cloze test questions\n" +
-                       "Ask me about specific grammar rules, vocabulary, or practice questions!";
-                       
-            case "TOEFL":
-                return "TOEFL (Test of English as a Foreign Language) Help:\n" +
-                       "- Academic English skills\n" +
-                       "- Reading, Listening, Speaking, Writing sections\n" +
-                       "- Integrated tasks\n" +
-                       "- Academic vocabulary and grammar\n" +
-                       "Ask me about test strategies, practice questions, or specific skills!";
-                       
-            case "IELTS":
-                return "IELTS (International English Language Testing System) Help:\n" +
-                       "- General and Academic modules\n" +
-                       "- All four skills: Reading, Writing, Listening, Speaking\n" +
-                       "- Task 1 and Task 2 writing\n" +
-                       "- Academic and general vocabulary\n" +
-                       "Ask me about test format, practice questions, or skill development!";
-                       
-            default:
-                return "Please specify a valid exam type: YDS, TOEFL, or IELTS";
+            System.err.println("Error starting Ollama: " + e.getMessage());
+            return false;
         }
     }
 }

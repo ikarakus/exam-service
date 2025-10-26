@@ -14,6 +14,11 @@ public class ChatResponse {
     private List<Choice> choices;
     private String language; 
     private String languageLevel;
+    private String response;
+    private String topic;
+    private String tutor;
+    private String modelUsed;
+    private Long responseTime;
 
     @Data
     @AllArgsConstructor
@@ -22,5 +27,13 @@ public class ChatResponse {
         private int index;
         private Message message;
         
+    }
+    
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class Message {
+        private String role;
+        private String content;
     }
 }
