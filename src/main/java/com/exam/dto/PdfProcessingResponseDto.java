@@ -50,7 +50,7 @@ public class PdfProcessingResponseDto {
         private int pdfPagesProcessed;
         private int textLength;
         private String extractionMethod;
-        private int openaiApiCalls;
+        // AI field removed - now using Llama
         private double confidenceScore;
     }
     

@@ -45,47 +45,13 @@ public class PdfProcessingServiceImpl implements PdfProcessingService {
 
     @Override
     public PdfProcessingResponseDto processPdfFile(MultipartFile file, PdfProcessingRequestDto request) {
-        long startTime = System.currentTimeMillis();
         PdfProcessingResponseDto response = new PdfProcessingResponseDto();
         
         try {
-            // Validate file
-            if (file.isEmpty()) {
-                response.setSuccess(false);
-                response.setMessage("PDF file is empty");
-                return response;
-            }
-            
-            if (!isPdfFile(file)) {
-                response.setSuccess(false);
-                response.setMessage("File is not a valid PDF");
-                return response;
-            }
-            
-            // Extract text from PDF
-            String pdfContent = extractTextFromPdf(file);
-            if (pdfContent == null || pdfContent.trim().isEmpty()) {
-                response.setSuccess(false);
-                response.setMessage("No text content found in PDF");
-                return response;
-            }
-            
-            // Create analysis request
-            PdfAnalysisRequestDto analysisRequest = new PdfAnalysisRequestDto();
-            analysisRequest.setPdfContent(pdfContent);
-            analysisRequest.setCourseLang(request.getCourseLang());
-            analysisRequest.setLevelId(request.getLevelId());
-            analysisRequest.setLessonId(request.getLessonId());
-            analysisRequest.setQuestionCount(request.getQuestionCount());
-            analysisRequest.setAnswerCount(request.getAnswerCount());
-            analysisRequest.setUserLang(request.getUserLang());
-            analysisRequest.setTopic(request.getTopic());
-            analysisRequest.setDifficulty(request.getDifficulty());
-            analysisRequest.setAssessment(request.getAssessment());
-            analysisRequest.setAnalysisType(request.getExtractionMethod());
-            
-            // Analyze content and extract questions
-            PdfProcessingResponseDto analysisResponse = analyzePdfContent(analysisRequest);
+            // This method is deprecated - use /api/pdf/process-simple or /api/pdf/add-manual instead
+            response.setSuccess(false);
+            response.setMessage("This endpoint is deprecated. Use /api/pdf/process-simple for text parsing or /api/pdf/add-manual for manual entry");
+            return response;
             
             // Update response with processing stats
             long processingTime = System.currentTimeMillis() - startTime;
@@ -117,21 +83,10 @@ public class PdfProcessingServiceImpl implements PdfProcessingService {
         PdfProcessingResponseDto response = new PdfProcessingResponseDto();
         
         try {
-            // Build comprehensive prompt for question extraction
-            String prompt = buildQuestionExtractionPrompt(request);
-            logger.info("Question extraction prompt: {}", prompt);
-            
-            // Call OpenAI API for question extraction
-            String extractedQuestionsJson = callOpenAiForQuestionExtraction(prompt, request);
-            
-            if (extractedQuestionsJson == null || extractedQuestionsJson.trim().isEmpty()) {
-                response.setSuccess(false);
-                response.setMessage("Failed to extract questions from PDF content");
-                return response;
-            }
-            
-            // Parse extracted questions
-            List<PdfProcessingResponseDto.ExtractedQuestionDto> questions = parseExtractedQuestions(extractedQuestionsJson);
+            // This method is deprecated - use /api/pdf/process-simple or /api/pdf/add-manual instead
+            response.setSuccess(false);
+            response.setMessage("This endpoint is deprecated. Use /api/pdf/process-simple for text parsing or /api/pdf/add-manual for manual entry");
+            return response;
             
             // Validate questions
             List<PdfProcessingResponseDto.ExtractedQuestionDto> validatedQuestions = validateQuestions(questions);
@@ -147,7 +102,7 @@ public class PdfProcessingServiceImpl implements PdfProcessingService {
             
             // Add processing stats
             Map<String, Object> stats = new HashMap<>();
-            stats.put("openaiApiCalls", 1);
+            // AI calls removed - now using Llama
             stats.put("confidenceScore", calculateConfidenceScore(validatedQuestions));
             response.setProcessingStats(stats);
             
@@ -274,33 +229,7 @@ public class PdfProcessingServiceImpl implements PdfProcessingService {
         return prompt.toString();
     }
     
-    private String callOpenAiForQuestionExtraction(String prompt, PdfAnalysisRequestDto request) {
-        try {
-            // Use the existing Llama service
-            ChatResponse response = llamaService.callLlamaApi(
-                "llama3", 
-                prompt, 
-                request.getCourseLang(), 
-                "any", 
-                request.getTopic() != null ? request.getTopic() : "question extraction", 
-                "", 
-                null,
-                false,
-                null,
-                null,
-                false
-            );
-            
-            if (response != null && response.getChoices() != null && !response.getChoices().isEmpty()) {
-                return response.getChoices().get(0).getMessage().getContent().trim();
-            }
-            
-        } catch (Exception e) {
-            logger.error("Error calling OpenAI API for question extraction", e);
-        }
-        
-        return null;
-    }
+    // AI method removed - use /api/pdf/process-simple or /api/pdf/add-manual instead
     
     private List<PdfProcessingResponseDto.ExtractedQuestionDto> parseExtractedQuestions(String jsonResponse) {
         try {

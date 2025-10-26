@@ -54,53 +54,9 @@ public class SessionController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/create-question-bank")
-    public ResponseEntity<ResponseDto<QuestionBank>> createQuestionBank(@RequestBody CreateQuestionBankRequestDto request) {
-        ResponseDto<QuestionBank> responseDto = new ResponseDto<>();
-        try {
-            List<QuestionBank> questions = questionBankService.createQuestionBank(request);
-            responseDto.setResponseBody(questions);
-            Helper.fillResponse(responseDto, ResultCodes.OK, null);
-        } catch (IllegalArgumentException e) {
-            // Handle language validation errors specifically
-            responseDto.setResultCode(ResultCodes.BAD_EXCEPTION);
-            responseDto.setErrorMessage("Invalid language configuration: " + e.getMessage());
-            return new ResponseEntity<>(responseDto, HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            responseDto.setResultCode(ResultCodes.INTERNAL_SERVER_ERROR);
-            responseDto.setErrorMessage("An error occurred while creating question bank: " + e.getMessage());
-        }
-        return new ResponseEntity<>(responseDto, HttpStatus.OK);
-    }
+    // Endpoint removed - use /api/pdf/add-manual instead
 
-    @PostMapping("/create-level-question-bank")
-    public ResponseEntity<ResponseDto<String>> createLevelQuestionBank(@RequestBody CreateLevelQuestionBankRequestDto request) {
-        ResponseDto<String> responseDto = new ResponseDto<>();
-        try {
-            // Start the background process
-            CompletableFuture<String> future = questionBankService.createLevelQuestionBank(request);
-            
-            // Return immediately with a success message
-            String message;
-            if (Boolean.TRUE.equals(request.getAssessment())) {
-                message = "Assessment question bank creation started in background for courseLang: " + request.getCourseLang();
-            } else {
-                message = "Question bank creation started in background for level ID: " + request.getLevelId();
-            }
-            responseDto.setResponseBody(Collections.singletonList(message));
-            Helper.fillResponse(responseDto, ResultCodes.OK, null);
-            
-        } catch (IllegalArgumentException e) {
-            // Handle language validation errors specifically
-            responseDto.setResultCode(ResultCodes.BAD_EXCEPTION);
-            responseDto.setErrorMessage("Invalid language configuration: " + e.getMessage());
-            return new ResponseEntity<>(responseDto, HttpStatus.BAD_REQUEST);
-        } catch (Exception e) {
-            responseDto.setResultCode(ResultCodes.INTERNAL_SERVER_ERROR);
-            responseDto.setErrorMessage("An error occurred while starting question bank creation: " + e.getMessage());
-        }
-        return new ResponseEntity<>(responseDto, HttpStatus.OK);
-    }
+    // Endpoint removed - use /api/pdf/add-manual instead
 
     @PostMapping("/passed-lessons")
     public ResponseEntity<ResponseDto<PassedLessonDto>> getPassedLessonsByLevel(@RequestBody StatsRequestDto request) {

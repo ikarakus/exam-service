@@ -100,7 +100,7 @@ public class SessionServiceImpl implements SessionService {
         if (questionDtos != null && questionDtos.size() > maxQuestionCount) {
             questionDtos = questionDtos.subList(0, maxQuestionCount);
         }
-        // Only create SessionTest if we have questions from OpenAI
+        // Only create SessionTest if we have questions from Llama
         if (questionDtos == null || questionDtos.isEmpty()) {
             // Could log or throw an error here if desired
             return null;
@@ -267,13 +267,13 @@ public class SessionServiceImpl implements SessionService {
             return;
         }
         SessionTest sessionTest = tests.get(0);
-        // 2. Call OpenAI to get speakingScore, userLevel, insufficientData
-        SpeakingScoreResult speakingResult = callOpenAiForSpeakingScore(messageInfoDto.getMessages());
+        // 2. Call Llama to get speakingScore, userLevel, insufficientData
+        SpeakingScoreResult speakingResult = callLlamaForSpeakingScore(messageInfoDto.getMessages());
         if (speakingResult == null) {
-            System.out.println("[Assessment] OpenAI speaking score result is null or could not be parsed.");
+            System.out.println("[Assessment] Llama speaking score result is null or could not be parsed.");
             return;
         }
-        System.out.println("[Assessment] OpenAI speaking score result: score=" + speakingResult.speakingScore + ", level=" + speakingResult.userLevel + ", insufficientData=" + speakingResult.insufficientData);
+        System.out.println("[Assessment] Llama speaking score result: score=" + speakingResult.speakingScore + ", level=" + speakingResult.userLevel + ", insufficientData=" + speakingResult.insufficientData);
         // If there is a speaking score, mark speakingStatus as COMPLETED
         sessionTest.setSpeakingInsufficientData(speakingResult.insufficientData);
         sessionTest.setSpeakingScore(0);
@@ -307,7 +307,7 @@ public class SessionServiceImpl implements SessionService {
         boolean insufficientData;
     }
 
-    private SpeakingScoreResult callOpenAiForSpeakingScore(List<MessageDto> messages) {
+    private SpeakingScoreResult callLlamaForSpeakingScore(List<MessageDto> messages) {
         // Build prompt
         StringBuilder conversation = new StringBuilder();
         for (MessageDto msg : messages) {
@@ -333,7 +333,7 @@ public class SessionServiceImpl implements SessionService {
             result.insufficientData = obj.has("insufficientData") && !obj.get("insufficientData").isJsonNull() && obj.get("insufficientData").getAsBoolean();
             return result;
         } catch (Exception e) {
-            System.out.println("[Assessment] Error parsing OpenAI speaking score response: " + e.getMessage());
+            System.out.println("[Assessment] Error parsing Llama speaking score response: " + e.getMessage());
             return null;
         }
     }

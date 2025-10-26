@@ -125,7 +125,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             logger.warn("Could not fetch question count from AppConfig, defaulting to 10", e);
         }
 
-        logger.info("Calling OpenAI service for level: {} and topic: {}", request.getLevel(), request.getTopic());
+        logger.info("Calling Llama service for level: {} and topic: {}", request.getLevel(), request.getTopic());
         
         // Generate questions using the same logic as create-exam
         List<SessionTestQuestionDto> questionDtos = llamaService.generateAssessmentQuestions(
@@ -188,7 +188,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             logger.warn("Could not fetch question count from AppConfig, defaulting to 10", e);
         }
 
-        logger.info("Calling OpenAI service for lesson: {}", lesson.getName());
+        logger.info("Calling Llama service for lesson: {}", lesson.getName());
         
         // Generate questions using the same logic as create-exam
         List<SessionTestQuestionDto> questionDtos = llamaService.generateAssessmentQuestions(
@@ -282,7 +282,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         // Validate that the language exists and is active by calling getFullLanguageName
         // This will throw IllegalArgumentException if language is not found or not active
         try {
-            // We need to access the OpenAiService to validate the language
+            // We need to access the LlamaService to validate the language
             // Since getFullLanguageName is private, we'll create a simple validation here
             validateCourseLanguage(request.getCourseLang());
         } catch (Exception e) {

@@ -20,7 +20,7 @@ public interface PdfProcessingService {
     PdfProcessingResponseDto processPdfFile(MultipartFile file, PdfProcessingRequestDto request);
     
     /**
-     * Analyze PDF content text and extract questions using OpenAI
+     * Analyze PDF content text and extract questions (deprecated - use process-simple or add-manual)
      * @param request The analysis request with PDF content
      * @return Processing response with extracted questions
      */
@@ -49,7 +49,7 @@ public interface PdfProcessingService {
     int saveQuestionsToDatabase(List<PdfProcessingResponseDto.ExtractedQuestionDto> questions, PdfProcessingRequestDto request);
     
     /**
-     * Process PDF file and extract questions using simple text parsing (no OpenAI)
+     * Process PDF file and extract questions using simple text parsing
      * @param file The PDF file to process
      * @param request The processing configuration
      * @return Processing response with extracted questions

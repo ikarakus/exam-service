@@ -157,7 +157,7 @@ public class PdfProcessingController {
     }
 
     @PostMapping(value = "/process-simple", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ApiOperation(value = "Process PDF file with simple text parsing (no OpenAI)", 
+    @ApiOperation(value = "Process PDF file with simple text parsing", 
                   notes = "Upload a PDF file and extract questions using text parsing for specific format with DOĞRU CEVAP")
     public ResponseEntity<ResponseDto> processPdfFileSimple(
             @ApiParam(value = "PDF file to process", required = true)
