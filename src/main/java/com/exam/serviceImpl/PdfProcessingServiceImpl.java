@@ -53,21 +53,6 @@ public class PdfProcessingServiceImpl implements PdfProcessingService {
             response.setMessage("This endpoint is deprecated. Use /api/pdf/process-simple for text parsing or /api/pdf/add-manual for manual entry");
             return response;
             
-            // Update response with processing stats
-            long processingTime = System.currentTimeMillis() - startTime;
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("processingTimeMs", processingTime);
-            stats.put("pdfSizeBytes", file.getSize());
-            stats.put("textLength", pdfContent.length());
-            stats.put("extractionMethod", request.getExtractionMethod());
-            
-            response.setSuccess(analysisResponse.isSuccess());
-            response.setMessage(analysisResponse.getMessage());
-            response.setTotalQuestionsExtracted(analysisResponse.getTotalQuestionsExtracted());
-            response.setQuestionsAddedToDatabase(analysisResponse.getQuestionsAddedToDatabase());
-            response.setExtractedQuestions(analysisResponse.getExtractedQuestions());
-            response.setProcessingStats(stats);
-            
         } catch (Exception e) {
             logger.error("Error processing PDF file", e);
             response.setSuccess(false);
@@ -87,24 +72,6 @@ public class PdfProcessingServiceImpl implements PdfProcessingService {
             response.setSuccess(false);
             response.setMessage("This endpoint is deprecated. Use /api/pdf/process-simple for text parsing or /api/pdf/add-manual for manual entry");
             return response;
-            
-            // Validate questions
-            List<PdfProcessingResponseDto.ExtractedQuestionDto> validatedQuestions = validateQuestions(questions);
-            
-            // Save to database
-            int savedCount = saveQuestionsToDatabase(validatedQuestions, convertToProcessingRequest(request));
-            
-            response.setSuccess(true);
-            response.setMessage("Successfully processed PDF and extracted questions");
-            response.setTotalQuestionsExtracted(questions.size());
-            response.setQuestionsAddedToDatabase(savedCount);
-            response.setExtractedQuestions(validatedQuestions);
-            
-            // Add processing stats
-            Map<String, Object> stats = new HashMap<>();
-            // AI calls removed - now using Llama
-            stats.put("confidenceScore", calculateConfidenceScore(validatedQuestions));
-            response.setProcessingStats(stats);
             
         } catch (Exception e) {
             logger.error("Error analyzing PDF content", e);
