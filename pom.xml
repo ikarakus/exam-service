@@ -279,7 +279,7 @@
     </repositories>
 
     <build>
-        <finalName>ai-service</finalName>
+        <finalName>exam-service</finalName>
         <plugins>
             <!-- Package as an executable jar/war -->
             <plugin>
