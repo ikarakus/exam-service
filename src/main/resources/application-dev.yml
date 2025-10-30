@@ -13,7 +13,7 @@ spring:
           use_jdbc_metadata_defaults: false
     open-in-view: false
 logging:
-  file: logs/dev/ai_app.log
+  file: logs/dev/exam_app.log
   pattern:
     console: "%d %-5level %logger : %msg%n"
     file: "%d %-5level [%thread] %logger : %msg%n"
