@@ -30,22 +30,3 @@ logging:
       suffix: .jsp
 welcome:
   message: Hello
-openai:
-  url: "https://api.openai.com/v1/chat/completions"
-  ttsUrl: "https://api.openai.com/v1/audio/speech"
-  chatgpt:
-    models:
-      - name: "gpt-4o"
-        settings:
-          max-tokens: 80       # allows for detailed and lengthy responses
-          temperature: 0.8       # balance between creativity and coherence
-          top_p: 1.0             # more deterministic responses
-          frequency_penalty: 0.0 # no penalty to ensure coherence
-          presence_penalty: 0.0  # no penalty to ensure fluid responses
-      - name: "gpt-4o-mini"
-        settings:
-          max-tokens: 100       # for shorter, to-the-point responses
-          temperature: 0.6       # more deterministic responses
-          top_p: 0.85            # more deterministic and focused responses
-          frequency_penalty: 0.2 # to avoid repetition
-          presence_penalty: 0.2  # to encourage new content
