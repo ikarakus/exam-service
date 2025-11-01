@@ -73,13 +73,19 @@ public class LlamaServiceImpl implements LlamaService {
             
             // Build ChatResponse in the same format as GPT chat
             ChatResponse chatResponse = new ChatResponse();
-            chatResponse.setResponse(llamaResponse);
+            
+            // Create choices list with a single choice containing the message (matching GPT format)
+            ChatResponse.Choice choice = new ChatResponse.Choice();
+            choice.setIndex(0);
+            
+            ChatResponse.Message message = new ChatResponse.Message();
+            message.setRole("assistant");
+            message.setContent(llamaResponse);
+            choice.setMessage(message);
+            
+            chatResponse.setChoices(Collections.singletonList(choice));
             chatResponse.setLanguage(language);
             chatResponse.setLanguageLevel(languageLevel);
-            chatResponse.setTopic(topic);
-            chatResponse.setTutor(tutor);
-            chatResponse.setModelUsed(config.getModel());
-            chatResponse.setResponseTime(responseTime);
             
             logger.info("Llama chat response generated successfully in {}ms", responseTime);
             return chatResponse;
@@ -243,7 +249,12 @@ public class LlamaServiceImpl implements LlamaService {
             ChatResponse response = callLlamaApi("llama3", prompt, "en", "any", 
                                                "speaking_assessment", "tutor", null, false, null, null, false);
             
-            return response.getResponse();
+            // Extract content from choices (matching GPT format)
+            if (response != null && response.getChoices() != null && !response.getChoices().isEmpty()) {
+                return response.getChoices().get(0).getMessage().getContent();
+            }
+            
+            throw new RuntimeException("Empty response from Llama API");
             
         } catch (Exception e) {
             logger.error("Error getting speaking score assessment", e);

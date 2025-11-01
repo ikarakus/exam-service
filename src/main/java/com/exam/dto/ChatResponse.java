@@ -14,11 +14,6 @@ public class ChatResponse {
     private List<Choice> choices;
     private String language; 
     private String languageLevel;
-    private String response;
-    private String topic;
-    private String tutor;
-    private String modelUsed;
-    private Long responseTime;
 
     @Data
     @AllArgsConstructor
