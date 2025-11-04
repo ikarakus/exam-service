@@ -25,7 +25,7 @@ public class LessonLevel {
     private Integer orderNo;
 
     @Column(name = "exam_type")
-    private Integer examType;
+    private String examType;
 
     // other fields...
 
@@ -78,11 +78,11 @@ public class LessonLevel {
         this.orderNo = orderNo;
     }
 
-    public Integer getExamType() {
+    public String getExamType() {
         return examType;
     }
 
-    public void setExamType(Integer examType) {
+    public void setExamType(String examType) {
         this.examType = examType;
     }
 
