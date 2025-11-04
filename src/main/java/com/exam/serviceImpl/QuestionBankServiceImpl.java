@@ -166,7 +166,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         // Get level name from database
         String levelName = "Unknown Level";
         try {
-            LessonLevel level = lessonLevelRepository.findById(lesson.getLevelId()).orElse(null);
+            LessonLevel level = lessonLevelRepository.findById(lesson.getLevelId().intValue()).orElse(null);
             if (level != null) {
                 levelName = level.getName();
             }
@@ -211,8 +211,8 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             questionBank.setOptions(gson.toJson(dto.getOptions()));
             questionBank.setCorrectLabel(dto.getCorrectLabel());
             questionBank.setExplanation(dto.getExplanation());
-            questionBank.setLevelId(lesson.getLevelId());
-            questionBank.setLessonId(lesson.getId());
+            questionBank.setLevelId(lesson.getLevelId().intValue());
+            questionBank.setLessonId(lesson.getId().intValue());
             questionBank.setCourseLang(courseLang);
             questionBank.setAssessment(false);
             questionBank.setCreatedDatetime(now);
