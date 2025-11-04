@@ -24,6 +24,9 @@ public class LessonLevel {
     @Column(name = "order_no")
     private Integer orderNo;
 
+    @Column(name = "exam_type")
+    private Integer examType;
+
     // other fields...
 
     // Make sure you have getters and setters for all fields
@@ -75,5 +78,13 @@ public class LessonLevel {
         this.orderNo = orderNo;
     }
 
-    // getters and setters for other fields...
+    public Integer getExamType() {
+        return examType;
+    }
+
+    public void setExamType(Integer examType) {
+        this.examType = examType;
+    }
+
+// getters and setters for other fields...
 }
