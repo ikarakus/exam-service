@@ -44,24 +44,95 @@ public class QuestionBank implements Serializable {
     @Column(name = "created_datetime")
     private Timestamp createdDatetime;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getQuestionText() { return questionText; }
-    public void setQuestionText(String questionText) { this.questionText = questionText; }
-    public String getOptions() { return options; }
-    public void setOptions(String options) { this.options = options; }
-    public String getCorrectLabel() { return correctLabel; }
-    public void setCorrectLabel(String correctLabel) { this.correctLabel = correctLabel; }
-    public String getExplanation() { return explanation; }
-    public void setExplanation(String explanation) { this.explanation = explanation; }
-    public Integer getLevelId() { return levelId; }
-    public void setLevelId(Integer levelId) { this.levelId = levelId; }
-    public Integer getLessonId() { return lessonId; }
-    public void setLessonId(Integer lessonId) { this.lessonId = lessonId; }
-    public String getCourseLang() { return courseLang; }
-    public void setCourseLang(String courseLang) { this.courseLang = courseLang; }
-    public Boolean getAssessment() { return assessment; }
-    public void setAssessment(Boolean assessment) { this.assessment = assessment; }
-    public Timestamp getCreatedDatetime() { return createdDatetime; }
-    public void setCreatedDatetime(Timestamp createdDatetime) { this.createdDatetime = createdDatetime; }
-} 
+    @Column(name = "category")
+    private String category;
+
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getQuestionText() {
+        return questionText;
+    }
+
+    public void setQuestionText(String questionText) {
+        this.questionText = questionText;
+    }
+
+    public String getOptions() {
+        return options;
+    }
+
+    public void setOptions(String options) {
+        this.options = options;
+    }
+
+    public String getCorrectLabel() {
+        return correctLabel;
+    }
+
+    public void setCorrectLabel(String correctLabel) {
+        this.correctLabel = correctLabel;
+    }
+
+    public String getExplanation() {
+        return explanation;
+    }
+
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
+
+    public Integer getLevelId() {
+        return levelId;
+    }
+
+    public void setLevelId(Integer levelId) {
+        this.levelId = levelId;
+    }
+
+    public Integer getLessonId() {
+        return lessonId;
+    }
+
+    public void setLessonId(Integer lessonId) {
+        this.lessonId = lessonId;
+    }
+
+    public String getCourseLang() {
+        return courseLang;
+    }
+
+    public void setCourseLang(String courseLang) {
+        this.courseLang = courseLang;
+    }
+
+    public Boolean getAssessment() {
+        return assessment;
+    }
+
+    public void setAssessment(Boolean assessment) {
+        this.assessment = assessment;
+    }
+
+    public Timestamp getCreatedDatetime() {
+        return createdDatetime;
+    }
+
+    public void setCreatedDatetime(Timestamp createdDatetime) {
+        this.createdDatetime = createdDatetime;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+}
