@@ -132,6 +132,7 @@ public class PdfProcessingServiceImpl implements PdfProcessingService {
                 questionBank.setLessonId(request.getLessonId());
                 questionBank.setCourseLang(request.getCourseLang());
                 questionBank.setAssessment(request.getAssessment());
+                questionBank.setCategory(request.getCategory());
                 questionBank.setCreatedDatetime(Timestamp.valueOf(LocalDateTime.now()));
                 
                 // Convert options to JSON
@@ -430,6 +431,12 @@ public class PdfProcessingServiceImpl implements PdfProcessingService {
                 return response;
             }
             
+            if (request.getCategory() == null || request.getCategory().trim().isEmpty()) {
+                response.setSuccess(false);
+                response.setMessage("Category is required");
+                return response;
+            }
+            
             // Create question DTO
             PdfProcessingResponseDto.ExtractedQuestionDto questionDto = new PdfProcessingResponseDto.ExtractedQuestionDto();
             questionDto.setQuestionText(request.getQuestionText().trim());
@@ -452,6 +459,7 @@ public class PdfProcessingServiceImpl implements PdfProcessingService {
             processingRequest.setLevelId(request.getLevelId());
             processingRequest.setLessonId(request.getLessonId());
             processingRequest.setAssessment(request.getAssessment() != null ? request.getAssessment() : false);
+            processingRequest.setCategory(request.getCategory());
             
             // Save to database
             List<PdfProcessingResponseDto.ExtractedQuestionDto> questions = Collections.singletonList(questionDto);

@@ -40,5 +40,7 @@ public class PdfProcessingRequestDto {
     private Boolean assessment = false;
     
     private String extractionMethod = "comprehensive"; // "comprehensive", "simple", "structured"
+    
+    private String category;
 }
 

@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotBlank;
 import java.util.List;
 
 @Data
@@ -18,6 +19,9 @@ public class ManualQuestionRequestDto {
     private Integer levelId;
     private Integer lessonId;
     private Boolean assessment = false;
+    
+    @NotBlank(message = "Category is required")
+    private String category;
     
     @Data
     @NoArgsConstructor
