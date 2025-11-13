@@ -16,4 +16,7 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, Long
     
     @Query(value ="SELECT * FROM question_bank WHERE level_id = :levelId AND lesson_id = :lessonId AND course_lang = :courseLang AND assessment = false ORDER BY RANDOM() LIMIT 100", nativeQuery = true)
     List<QuestionBank> findByLevelIdAndLessonIdAndCourseLang(@Param("levelId") Integer levelId, @Param("lessonId") Integer lessonId, @Param("courseLang") String courseLang);
+    
+    @Query(value ="SELECT * FROM question_bank WHERE level_id = :levelId AND lesson_id = :lessonId ORDER BY RANDOM() LIMIT 1", nativeQuery = true)
+    QuestionBank findRandomByLevelIdAndLessonId(@Param("levelId") Integer levelId, @Param("lessonId") Integer lessonId);
 } 

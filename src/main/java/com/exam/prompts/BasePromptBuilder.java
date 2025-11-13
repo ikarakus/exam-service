@@ -42,9 +42,9 @@ public abstract class BasePromptBuilder {
     private void appendModelSpecificInstructions(String model) {
         // Use the tutor name if provided, otherwise a generic name
         String name = (tutor != null && !tutor.trim().isEmpty() && !"any".equalsIgnoreCase(tutor)) ? tutor : "your friendly AI assistant";
-        if (model.equals("gpt-4o")) {
+        if (model != null && model.equals("gpt-4o")) {
             systemMessage.append("You are ").append(name).append(", a friendly, helpful AI assistant who can explain things clearly. ");
-        } else if (model.equals("gpt-4o-mini")) {
+        } else if (model != null && model.equals("gpt-4o-mini")) {
             systemMessage.append("You are ").append(name).append(", a concise, friendly AI assistant. ");
         } else {
             systemMessage.append("You are ").append(name).append(", a helpful AI assistant. ");

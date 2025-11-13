@@ -38,6 +38,12 @@ public class LlamaController {
 
     @Autowired
     UserProfileRepository userProfileRepository;
+    
+    @Autowired
+    LessonLevelRepository lessonLevelRepository;
+    
+    @Autowired
+    LessonRepository lessonRepository;
 
     /**
      * Chat endpoint for exam-related topics using Llama 3
@@ -52,6 +58,8 @@ public class LlamaController {
         String userNickname = null;
         String ageRange = null;
         boolean isChildFriendly = false;
+        String examType = null;
+        String courseLang = null;
         
         // Lookup tutor information if tutorId is provided
         if (chat.getTutorId() != null) {
@@ -84,6 +92,34 @@ public class LlamaController {
             }
         }
         
+        // Get levelId - either from request or from lesson if lessonId is provided
+        Long levelId = chat.getLevelId();
+        if (levelId == null && chat.getLessonId() != null) {
+            try {
+                Optional<Lesson> lesson = lessonRepository.findById(chat.getLessonId());
+                if (lesson.isPresent() && lesson.get().getLevelId() != null) {
+                    levelId = lesson.get().getLevelId();
+                }
+            } catch (Exception e) {
+                System.err.println("Error looking up lesson: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        
+        // Detect exam_type from levelId if available
+        if (levelId != null) {
+            try {
+                Optional<LessonLevel> lessonLevel = lessonLevelRepository.findById(levelId.intValue());
+                if (lessonLevel.isPresent()) {
+                    examType = lessonLevel.get().getExamType();
+                    courseLang = lessonLevel.get().getCourseLang();
+                }
+            } catch (Exception e) {
+                System.err.println("Error looking up lesson level: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        
         ChatResponse chatResponse = llamaService.callLlamaApi(
             chat.getModel(), 
             chat.getPrompt(), 
@@ -95,7 +131,11 @@ public class LlamaController {
             isChildFriendly,
             userNickname,
             ageRange,
-            chat.getFirstMessage() != null ? chat.getFirstMessage() : false
+            chat.getFirstMessage() != null ? chat.getFirstMessage() : false,
+            examType,
+            levelId,
+            chat.getLessonId(),
+            courseLang
         );
         
         responseDto.setResponseBody(Collections.singletonList(chatResponse));

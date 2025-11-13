@@ -20,12 +20,16 @@ public interface LlamaService {
      * @param userNickname User's nickname for personalization
      * @param ageRange User's age range
      * @param isFirstMessage Whether this is the first message
+     * @param examType Exam type (YDS, TOEFL, IELTS) if applicable
+     * @param levelId Level ID for question lookup
+     * @param lessonId Lesson ID for question lookup
+     * @param courseLang Course language for question lookup
      * @return Chat response in the same format as GPT chat
      */
     ChatResponse callLlamaApi(String modelName, String prompt, String language, String languageLevel, 
                              String topic, String tutor, List<MessageDto> pastDialogue, 
                              boolean isChildFriendly, String userNickname, String ageRange, 
-                             boolean isFirstMessage);
+                             boolean isFirstMessage, String examType, Long levelId, Long lessonId, String courseLang);
     
     /**
      * Check if Llama service is available

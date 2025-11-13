@@ -16,5 +16,7 @@ public class Chat {
     private Boolean firstMessage = false;  // Default value false
     private Long userId = null;  // Default value null
     private Long tutorId = null;  // Default value null
+    private Long lessonId = null;  // Default value null
+    private Long levelId = null;  // Default value null
     // getters and setters
 }

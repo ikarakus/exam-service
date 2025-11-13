@@ -102,7 +102,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         String topicName = request.getTopic();
         if (topicName == null && request.getTopicId() != null) {
             try {
-                Lesson lesson = lessonRepository.findById(request.getTopicId()).orElse(null);
+                Lesson lesson = lessonRepository.findById(request.getTopicId().longValue()).orElse(null);
                 if (lesson != null) {
                     topicName = lesson.getName();
                 }
